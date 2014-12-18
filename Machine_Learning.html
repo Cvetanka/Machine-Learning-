@@ -1,0 +1,447 @@
+Predicted performances of high tech fitness geeks
+
+This report is aimed to to evaluate some machine learning algorithms, by predicting the future performances of high tech geeks based on the past data collected from devices such as Jawbone Up, Nike FuelBand, and Fitbit. There are five posiblle outcomes and consequentually 5 posiblle predictions:
+
+A: exactly according to the specification
+B: throwing the elbows to the front
+C: lifting the dumbbell only halfway
+D: lowering the dumbbell only halfway
+E: throwing the hips to the front
+
+More information on this site: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+Geting and cleaning the data
+
+The data are download from these sources: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv - (training data) https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv - (validation data)
+
+The raw data contain a lot of columns that are either empty, NA, strange simbols or simply do not contribute to the analysis. Those columns are removed.
+
+library(Hmisc)
+library(caret)
+library(randomForest)
+library(foreach)
+library(doParallel)
+library(kernlab)
+library(knitr)
+library(doSNOW)
+set.seed(12345)
+
+train1 <- read.csv("pml-training.csv", na.strings=c("#DIV/0!","","NA"))
+test1 <- read.csv("pml-testing.csv", na.strings=c("#DIV/0!","","NA"))
+train1 <- train1[colSums(is.na(train1))==0]
+test1 <- test1[colSums(is.na(test1))==0]
+setdiff(names(train1),names(test1))
+
+##  [1] "user_name"            "raw_timestamp_part_1" "raw_timestamp_part_2"
+##  [4] "cvtd_timestamp"       "new_window"           "num_window"          
+##  [7] "roll_belt"            "pitch_belt"           "yaw_belt"            
+## [10] "total_accel_belt"     "classe"
+
+drops <- c("X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2","cvtd_timestamp", "new_window", "num_window","roll_belt","pitch_belt", "yaw_belt","total_accel_belt")
+tr <- train1[,!(names(train1)%in% drops)]
+ts <- test1[,!(names(test1)%in% drops)]
+tr$classe <- as.factor(tr$classe)
+set <- createDataPartition(y = tr$classe, p=0.75, list = FALSE)
+
+Analysis - prediction and cross-validation
+
+The training data set is split in ratio (0.75/0.25) on two sets: training and testing (a set used for cross-validation). Three different machine learning methods (Random Forest -RF, Support Vector Machine - SVM and K Nearest Neighbors - KNN) are applied and their accuracy is compared. They are applied two times in two different ways: 1) without preprocessing and 2) with preprocessing the data. An interesting observation is that the RF who has has the highest accuracy without preprocessing does not benefit in the term of accuracy from preprocessing, while SVM and KNN who have lower accuracy become more accurate with preprocessing.
+
+Without preprocessing: Random_Forest (0.984) SVM (0.912) KNN(0.873)
+With preprocessing: Random_Forest (0.984) SVM (0.972) KNN( 0.947)
+
+Since preprocessing does not affect the accuracy in great extent, for the further analysis the results without preprocessing are used.
+
+The RF also differ from SVM and KNN in the selection of the variable of Importance as could be observed from the results bellow.
+
+Cross validation for all three methods is done on testing set. ConfusionMatrix and Statistics show good correlation between the outcome from training and testing sets (very small, almost neglecting number of missclasification). Kappa value is 1 (or very close to 1), what does mean that the observed accuracy perfectly matches the expected accuracy and the error is minimised.
+
+training <- tr[set,]
+testing <- tr[-set,]
+registerDoParallel()
+
+ConV <- trainControl(method = "cv", number = 3, allowParallel = TRUE, verboseIter = TRUE)
+model1 <- train(classe ~., data = training, method = "rf", trControl =ConV) # without preprocessing
+
+## Aggregating results
+## Selecting tuning parameters
+## Fitting mtry = 2 on full training set
+
+model2 <- train(classe~., data = training, method = "svmRadial", trControl = ConV)# without preprocessing
+
+## Aggregating results
+## Selecting tuning parameters
+## Fitting sigma = 0.0149, C = 1 on full training set
+
+model3 <- train(classe~., data = training, method = "knn", trControl = ConV) # without preprocessing
+
+## Aggregating results
+## Selecting tuning parameters
+## Fitting k = 5 on full training set
+
+Random_Forest <- round(max(head(model1$results)$Accuracy),3)
+SVM <- round(max(head(model2$results)$Accuracy),3)
+KNN <- round(max(head(model3$results)$Accuracy),3)
+s <- data.frame(Random_Forest,SVM,KNN); rownames(s) <- "Accuracy"; s
+
+##          Random_Forest   SVM   KNN
+## Accuracy         0.984 0.912 0.874
+
+model11 <- train(classe ~., data = training, method = "rf", trControl =ConV, preProc = c("center", "scale"),
+tuneLength = 8)# with preprocessing
+
+## Aggregating results
+## Selecting tuning parameters
+## Fitting mtry = 8 on full training set
+
+model22 <- train(classe~., data = training, method = "svmRadial", trControl = ConV, preProc = c("center", "scale"),
+tuneLength = 8) # # with preprocessing
+
+## Aggregating results
+## Selecting tuning parameters
+## Fitting sigma = 0.0145, C = 32 on full training set
+
+model33 <- train(classe~., data = training, method = "knn", trControl = ConV,preProc = c("center", "scale"),
+tuneLength = 8) # # with preprocessing
+
+## Aggregating results
+## Selecting tuning parameters
+## Fitting k = 5 on full training set
+
+Random_Forest <- round(max(head(model11$results)$Accuracy),3)
+SVM <- round(max(head(model22$results)$Accuracy),3)
+KNN <- round(max(head(model33$results)$Accuracy),3)
+s <- data.frame(Random_Forest,SVM,KNN); rownames(s) <- "Accuracy"; s
+
+##          Random_Forest   SVM   KNN
+## Accuracy         0.985 0.971 0.946
+
+R1 <- varImp(model1); R2 <- varImp(model2); R3 <- varImp(model3)
+(R <- list(R1,R2,R3))
+
+## [[1]]
+## rf variable importance
+## 
+##   only 20 most important variables shown (out of 48)
+## 
+##                      Overall
+## magnet_dumbbell_z     100.00
+## magnet_dumbbell_y      88.70
+## pitch_forearm          80.72
+## roll_forearm           76.52
+## magnet_dumbbell_x      74.19
+## magnet_belt_z          71.61
+## accel_belt_z           71.50
+## magnet_belt_y          69.69
+## accel_dumbbell_y       62.50
+## roll_dumbbell          58.44
+## accel_dumbbell_z       53.91
+## roll_arm               53.71
+## gyros_belt_z           50.62
+## accel_forearm_x        47.49
+## accel_dumbbell_x       42.03
+## yaw_dumbbell           40.64
+## gyros_dumbbell_y       40.21
+## magnet_forearm_z       39.05
+## magnet_arm_x           38.84
+## total_accel_dumbbell   37.39
+## 
+## [[2]]
+## ROC curve variable importance
+## 
+##   variables are sorted by maximum importance across the classes
+##   only 20 most important variables shown (out of 48)
+## 
+##                        A     B     C      D     E
+## pitch_forearm     100.00 62.91 74.64 100.00 66.57
+## roll_dumbbell      50.90 62.68 83.08  83.08 58.27
+## accel_forearm_x    81.53 53.94 64.36  81.53 48.16
+## magnet_arm_x       77.71 52.53 54.29  77.71 65.78
+## magnet_arm_y       76.27 39.80 52.59  76.27 68.91
+## accel_arm_x        73.09 51.01 47.23  73.09 62.74
+## pitch_dumbbell     55.70 72.34 72.34  63.51 47.66
+## magnet_forearm_x   72.31 52.98 39.33  72.31 45.04
+## magnet_belt_y      68.91 60.43 61.35  62.82 68.91
+## magnet_dumbbell_x  66.77 66.77 65.27  51.84 53.05
+## magnet_dumbbell_y  47.63 66.43 66.43  46.71 53.45
+## magnet_dumbbell_z  59.32 27.16 59.32  35.53 55.84
+## accel_dumbbell_x   59.20 59.20 58.49  51.01 41.90
+## magnet_belt_z      53.37 50.57 49.97  53.14 53.37
+## magnet_arm_z       51.96 51.96 36.77  39.77 50.78
+## pitch_arm          51.17 27.46 38.38  42.30 51.17
+## magnet_forearm_y   39.04 25.22 46.91  46.91 36.25
+## accel_dumbbell_z   45.93 45.93 43.14  23.59 33.50
+## yaw_dumbbell       23.27 45.12 45.12  22.71 30.85
+## accel_belt_z       43.21 19.29 20.78  16.14 43.21
+## 
+## [[3]]
+## ROC curve variable importance
+## 
+##   variables are sorted by maximum importance across the classes
+##   only 20 most important variables shown (out of 48)
+## 
+##                        A     B     C      D     E
+## pitch_forearm     100.00 62.91 74.64 100.00 66.57
+## roll_dumbbell      50.90 62.68 83.08  83.08 58.27
+## accel_forearm_x    81.53 53.94 64.36  81.53 48.16
+## magnet_arm_x       77.71 52.53 54.29  77.71 65.78
+## magnet_arm_y       76.27 39.80 52.59  76.27 68.91
+## accel_arm_x        73.09 51.01 47.23  73.09 62.74
+## pitch_dumbbell     55.70 72.34 72.34  63.51 47.66
+## magnet_forearm_x   72.31 52.98 39.33  72.31 45.04
+## magnet_belt_y      68.91 60.43 61.35  62.82 68.91
+## magnet_dumbbell_x  66.77 66.77 65.27  51.84 53.05
+## magnet_dumbbell_y  47.63 66.43 66.43  46.71 53.45
+## magnet_dumbbell_z  59.32 27.16 59.32  35.53 55.84
+## accel_dumbbell_x   59.20 59.20 58.49  51.01 41.90
+## magnet_belt_z      53.37 50.57 49.97  53.14 53.37
+## magnet_arm_z       51.96 51.96 36.77  39.77 50.78
+## pitch_arm          51.17 27.46 38.38  42.30 51.17
+## magnet_forearm_y   39.04 25.22 46.91  46.91 36.25
+## accel_dumbbell_z   45.93 45.93 43.14  23.59 33.50
+## yaw_dumbbell       23.27 45.12 45.12  22.71 30.85
+## accel_belt_z       43.21 19.29 20.78  16.14 43.21
+
+p1 <- predict(model1, newdata = training)
+confusionMatrix(p1,training$classe)
+
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 4185    0    0    0    0
+##          B    0 2848    0    0    0
+##          C    0    0 2567    0    0
+##          D    0    0    0 2412    0
+##          E    0    0    0    0 2706
+## 
+## Overall Statistics
+##                                      
+##                Accuracy : 1          
+##                  95% CI : (0.9997, 1)
+##     No Information Rate : 0.2843     
+##     P-Value [Acc > NIR] : < 2.2e-16  
+##                                      
+##                   Kappa : 1          
+##  Mcnemar's Test P-Value : NA         
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            1.0000   1.0000   1.0000   1.0000   1.0000
+## Specificity            1.0000   1.0000   1.0000   1.0000   1.0000
+## Pos Pred Value         1.0000   1.0000   1.0000   1.0000   1.0000
+## Neg Pred Value         1.0000   1.0000   1.0000   1.0000   1.0000
+## Prevalence             0.2843   0.1935   0.1744   0.1639   0.1839
+## Detection Rate         0.2843   0.1935   0.1744   0.1639   0.1839
+## Detection Prevalence   0.2843   0.1935   0.1744   0.1639   0.1839
+## Balanced Accuracy      1.0000   1.0000   1.0000   1.0000   1.0000
+
+p2 <- predict(model1, newdata = testing)
+confusionMatrix(p2,testing$classe)
+
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1393   10    0    0    0
+##          B    2  933    3    0    0
+##          C    0    6  852   18    2
+##          D    0    0    0  786    5
+##          E    0    0    0    0  894
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.9906          
+##                  95% CI : (0.9875, 0.9931)
+##     No Information Rate : 0.2845          
+##     P-Value [Acc > NIR] : < 2.2e-16       
+##                                           
+##                   Kappa : 0.9881          
+##  Mcnemar's Test P-Value : NA              
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.9986   0.9831   0.9965   0.9776   0.9922
+## Specificity            0.9972   0.9987   0.9936   0.9988   1.0000
+## Pos Pred Value         0.9929   0.9947   0.9704   0.9937   1.0000
+## Neg Pred Value         0.9994   0.9960   0.9993   0.9956   0.9983
+## Prevalence             0.2845   0.1935   0.1743   0.1639   0.1837
+## Detection Rate         0.2841   0.1903   0.1737   0.1603   0.1823
+## Detection Prevalence   0.2861   0.1913   0.1790   0.1613   0.1823
+## Balanced Accuracy      0.9979   0.9909   0.9950   0.9882   0.9961
+
+pp1 <- predict(model2, newdata = training)
+confusionMatrix(pp1,training$classe)
+
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 4164  246   12    8    3
+##          B   10 2497   96    8   26
+##          C    9   97 2435  241  101
+##          D    1    3   21 2149   72
+##          E    1    5    3    6 2504
+## 
+## Overall Statistics
+##                                         
+##                Accuracy : 0.9342        
+##                  95% CI : (0.93, 0.9381)
+##     No Information Rate : 0.2843        
+##     P-Value [Acc > NIR] : < 2.2e-16     
+##                                         
+##                   Kappa : 0.9166        
+##  Mcnemar's Test P-Value : < 2.2e-16     
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.9950   0.8768   0.9486   0.8910   0.9254
+## Specificity            0.9745   0.9882   0.9631   0.9921   0.9988
+## Pos Pred Value         0.9393   0.9469   0.8446   0.9568   0.9940
+## Neg Pred Value         0.9980   0.9709   0.9888   0.9789   0.9834
+## Prevalence             0.2843   0.1935   0.1744   0.1639   0.1839
+## Detection Rate         0.2829   0.1697   0.1654   0.1460   0.1701
+## Detection Prevalence   0.3012   0.1792   0.1959   0.1526   0.1712
+## Balanced Accuracy      0.9847   0.9325   0.9559   0.9415   0.9621
+
+pp2 <- predict(model2, newdata = testing)
+confusionMatrix(pp2,testing$classe)
+
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1390   90    2    5    2
+##          B    2  819   32   12    9
+##          C    3   39  813   77   40
+##          D    0    0    8  708   34
+##          E    0    1    0    2  816
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.927           
+##                  95% CI : (0.9194, 0.9341)
+##     No Information Rate : 0.2845          
+##     P-Value [Acc > NIR] : < 2.2e-16       
+##                                           
+##                   Kappa : 0.9075          
+##  Mcnemar's Test P-Value : < 2.2e-16       
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.9964   0.8630   0.9509   0.8806   0.9057
+## Specificity            0.9718   0.9861   0.9607   0.9898   0.9993
+## Pos Pred Value         0.9335   0.9371   0.8364   0.9440   0.9963
+## Neg Pred Value         0.9985   0.9677   0.9893   0.9769   0.9792
+## Prevalence             0.2845   0.1935   0.1743   0.1639   0.1837
+## Detection Rate         0.2834   0.1670   0.1658   0.1444   0.1664
+## Detection Prevalence   0.3036   0.1782   0.1982   0.1529   0.1670
+## Balanced Accuracy      0.9841   0.9246   0.9558   0.9352   0.9525
+
+ppp1 <- predict(model3, newdata = training)
+confusionMatrix(ppp1,training$classe)
+
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 4112   63   10   14   14
+##          B   20 2678   44    6   38
+##          C   18   47 2471   92   28
+##          D   29   34   30 2284   46
+##          E    6   26   12   16 2580
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.9597          
+##                  95% CI : (0.9564, 0.9628)
+##     No Information Rate : 0.2843          
+##     P-Value [Acc > NIR] : < 2.2e-16       
+##                                           
+##                   Kappa : 0.949           
+##  Mcnemar's Test P-Value : < 2.2e-16       
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.9826   0.9403   0.9626   0.9469   0.9534
+## Specificity            0.9904   0.9909   0.9848   0.9887   0.9950
+## Pos Pred Value         0.9760   0.9612   0.9303   0.9426   0.9773
+## Neg Pred Value         0.9931   0.9858   0.9920   0.9896   0.9896
+## Prevalence             0.2843   0.1935   0.1744   0.1639   0.1839
+## Detection Rate         0.2794   0.1820   0.1679   0.1552   0.1753
+## Detection Prevalence   0.2862   0.1893   0.1805   0.1646   0.1794
+## Balanced Accuracy      0.9865   0.9656   0.9737   0.9678   0.9742
+
+ppp2 <- predict(model3, newdata = testing)
+confusionMatrix(ppp2,testing$classe)
+
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1336   43   13   10    7
+##          B   21  812   25    7   32
+##          C   21   47  788   47   21
+##          D   12   26   17  729   24
+##          E    5   21   12   11  817
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.9139          
+##                  95% CI : (0.9057, 0.9217)
+##     No Information Rate : 0.2845          
+##     P-Value [Acc > NIR] : < 2.2e-16       
+##                                           
+##                   Kappa : 0.8912          
+##  Mcnemar's Test P-Value : 1.57e-07        
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            0.9577   0.8556   0.9216   0.9067   0.9068
+## Specificity            0.9792   0.9785   0.9664   0.9807   0.9878
+## Pos Pred Value         0.9482   0.9052   0.8528   0.9022   0.9434
+## Neg Pred Value         0.9831   0.9658   0.9832   0.9817   0.9792
+## Prevalence             0.2845   0.1935   0.1743   0.1639   0.1837
+## Detection Rate         0.2724   0.1656   0.1607   0.1487   0.1666
+## Detection Prevalence   0.2873   0.1829   0.1884   0.1648   0.1766
+## Balanced Accuracy      0.9685   0.9171   0.9440   0.9437   0.9473
+
+Final validation
+
+Final validation is done on validation set. All three methods give the same prediction. Answers as presented bellow are submited and the are correct.
+
+answers1 <- predict(model1, newdata=ts)
+answers2 <- predict(model2, newdata=ts)
+answers3 <- predict(model3, newdata=ts)
+
+
+Prediction <- data.frame(answers1, answers2, answers3)
+colnames(Prediction) <- c("Random Forest", "SVM", "KNN")
+Prediction
+
+##    Random Forest SVM KNN
+## 1              B   B   B
+## 2              A   A   A
+## 3              B   B   B
+## 4              A   A   A
+## 5              A   A   A
+## 6              E   E   E
+## 7              D   D   D
+## 8              B   B   B
+## 9              A   A   A
+## 10             A   A   A
+## 11             B   B   B
+## 12             C   C   C
+## 13             B   B   B
+## 14             A   A   A
+## 15             E   E   E
+## 16             E   E   E
+## 17             A   A   A
+## 18             B   B   B
+## 19             B   B   B
+## 20             B   B   B
