@@ -113,7 +113,7 @@ confusionMatrix(ppp2,testing$classe)
 
 ## Final validation ##
 
-Final validation is done on validation set. All three methods give the same prediction. Answers as presented bellow are submited and the are correct.
+Final validation is done on validation set. All three methods give the same prediction. Answers as presented bellow are submited and they are correct.
 
 ```{r }
  
