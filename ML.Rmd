@@ -39,7 +39,6 @@ drops <- c("X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2","cvt
 tr <- train1[,!(names(train1)%in% drops)]
 ts <- test1[,!(names(test1)%in% drops)]
 tr$classe <- as.factor(tr$classe)
-set <- createDataPartition(y = tr$classe, p=0.75, list = FALSE)
 
 ```            
 
@@ -62,7 +61,7 @@ Cross validation for all three methods is done on testing set. ConfusionMatrix a
 
 ```{r}
 
-
+set <- createDataPartition(y = tr$classe, p=0.75, list = FALSE)
 training <- tr[set,]
 testing <- tr[-set,]
 registerDoParallel()
