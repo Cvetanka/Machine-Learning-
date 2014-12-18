@@ -1,0 +1,130 @@
+# Predicted performances of high tech fitness geeks #
+========================================================
+
+This report is aimed to to evaluate some machine learning algorithms, by predicting the future performances of high tech geeks based on the past data collected from devices such as Jawbone Up, Nike FuelBand, and Fitbit. There are five posiblle outcomes and consequentually 5 posiblle predictions:
+
+    A: exactly according to the specification
+    B: throwing the elbows to the front
+    C: lifting the dumbbell only halfway
+    D: lowering the dumbbell only halfway
+    E: throwing the hips to the front
+
+More information on this site: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
+
+## Geting and cleaning the data ##
+
+The data are download from these sources:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv - (training data)
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv - (validation data)
+
+The raw data contain a lot of columns that are either empty, NA, strange simbols or simply do not contribute to the analysis. Those columns are removed. 
+
+```{r, cache = TRUE }
+library(Hmisc)
+library(caret)
+library(randomForest)
+library(foreach)
+library(doParallel)
+library(kernlab)
+library(knitr)
+library(doSNOW)
+set.seed(12345)
+
+train1 <- read.csv("pml-training.csv", na.strings=c("#DIV/0!","","NA"))
+test1 <- read.csv("pml-testing.csv", na.strings=c("#DIV/0!","","NA"))
+train1 <- train1[colSums(is.na(train1))==0]
+test1 <- test1[colSums(is.na(test1))==0]
+setdiff(names(train1),names(test1))
+drops <- c("X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2","cvtd_timestamp", "new_window", "num_window","roll_belt","pitch_belt", "yaw_belt","total_accel_belt")
+tr <- train1[,!(names(train1)%in% drops)]
+ts <- test1[,!(names(test1)%in% drops)]
+tr$classe <- as.factor(tr$classe)
+set <- createDataPartition(y = tr$classe, p=0.75, list = FALSE)
+
+```            
+
+## Analysis - prediction and cross-validation ##
+
+The training data set is split in ratio (0.75/0.25) on two sets: training and testing (a set used for cross-validation).
+Three different machine learning methods (Random Forest -RF, Support Vector Machine - SVM and K Nearest Neighbors - KNN) are applied and their accuracy is compared. They are applied two times in two different ways: 1) without preprocessing and 2) with preprocessing the data. An interesting observation is that the RF who has has the highest accuracy without preprocessing does not benefit in the term of accuracy from preprocessing, while SVM and KNN who have lower accuracy become more accurate with preprocessing.
+  
+
+
+Without preprocessing: Random_Forest (0.984) SVM (0.912)    KNN(0.873)                                
+With preprocessing:   Random_Forest (0.984) SVM (0.972)    KNN( 0.947)
+           
+Since preprocessing does not affect the accuracy in great extent, for the further analysis the results without preprocessing are used.
+
+The RF also differ from SVM and KNN in the selection of the variable of Importance as could be observed from the results bellow.
+
+Cross validation for all three methods is done on testing set. ConfusionMatrix and Statistics show good correlation between the outcome from training and testing sets (very small, almost neglecting number of missclasification). Kappa value is 1 (or very close to 1), what does mean that the observed accuracy perfectly matches the expected accuracy and the error is minimised.
+
+
+```{r}
+
+
+training <- tr[set,]
+testing <- tr[-set,]
+registerDoParallel()
+
+ConV <- trainControl(method = "cv", number = 3, allowParallel = TRUE, verboseIter = TRUE)
+model1 <- train(classe ~., data = training, method = "rf", trControl =ConV) # without preprocessing
+model2 <- train(classe~., data = training, method = "svmRadial", trControl = ConV)# without preprocessing
+model3 <- train(classe~., data = training, method = "knn", trControl = ConV) # without preprocessing
+
+Random_Forest <- round(max(head(model1$results)$Accuracy),3)
+SVM <- round(max(head(model2$results)$Accuracy),3)
+KNN <- round(max(head(model3$results)$Accuracy),3)
+s <- data.frame(Random_Forest,SVM,KNN); rownames(s) <- "Accuracy"; s
+
+model11 <- train(classe ~., data = training, method = "rf", trControl =ConV, preProc = c("center", "scale"),
+tuneLength = 8)# with preprocessing
+model22 <- train(classe~., data = training, method = "svmRadial", trControl = ConV, preProc = c("center", "scale"),
+tuneLength = 8) # # with preprocessing
+model33 <- train(classe~., data = training, method = "knn", trControl = ConV,preProc = c("center", "scale"),
+tuneLength = 8) # # with preprocessing
+
+
+
+Random_Forest <- round(max(head(model11$results)$Accuracy),3)
+SVM <- round(max(head(model22$results)$Accuracy),3)
+KNN <- round(max(head(model33$results)$Accuracy),3)
+s <- data.frame(Random_Forest,SVM,KNN); rownames(s) <- "Accuracy"; s
+
+R1 <- varImp(model1); R2 <- varImp(model2); R3 <- varImp(model3)
+(R <- list(R1,R2,R3))
+
+p1 <- predict(model1, newdata = training)
+confusionMatrix(p1,training$classe)
+p2 <- predict(model1, newdata = testing)
+confusionMatrix(p2,testing$classe)
+
+pp1 <- predict(model2, newdata = training)
+confusionMatrix(pp1,training$classe)
+pp2 <- predict(model2, newdata = testing)
+confusionMatrix(pp2,testing$classe)
+
+ppp1 <- predict(model3, newdata = training)
+confusionMatrix(ppp1,training$classe)
+ppp2 <- predict(model3, newdata = testing)
+confusionMatrix(ppp2,testing$classe)
+
+```
+
+## Final validation ##
+
+Final validation is done on validation set. All three methods give the same prediction. Answers as presented bellow are submited and the are correct.
+
+```{r }
+ 
+answers1 <- predict(model1, newdata=ts)
+answers2 <- predict(model2, newdata=ts)
+answers3 <- predict(model3, newdata=ts)
+
+
+Prediction <- data.frame(answers1, answers2, answers3)
+colnames(Prediction) <- c("Random Forest", "SVM", "KNN")
+Prediction
+
+```
+
