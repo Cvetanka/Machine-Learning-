@@ -11,7 +11,7 @@ This report is aimed to to evaluate some machine learning algorithms, by predict
 
 More information on this site: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
 
-## Geting and cleaning the data ##
+## Getting and cleaning the data ##
 
 The data are download from these sources:
 https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv - (training data)
