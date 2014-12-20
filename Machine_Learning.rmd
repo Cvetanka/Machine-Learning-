@@ -100,20 +100,21 @@ s <- data.frame(Random_Forest,SVM,KNN); rownames(s) <- "Accuracy"; s
 R1 <- varImp(model1); R2 <- varImp(model2); R3 <- varImp(model3)
 (R <- list(R1,R2,R3))
 
-p1 <- predict(model1, newdata = training)
-confusionMatrix(p1,training$classe)
-p2 <- predict(model1, newdata = testing)
+
+p <- predict(model1, newdata = testing)
 confusionMatrix(p2,testing$classe)
 
-pp1 <- predict(model2, newdata = training)
-confusionMatrix(pp1,training$classe)
-pp2 <- predict(model2, newdata = testing)
+
+pp <- predict(model2, newdata = testing)
 confusionMatrix(pp2,testing$classe)
 
-ppp1 <- predict(model3, newdata = training)
-confusionMatrix(ppp1,training$classe)
-ppp2 <- predict(model3, newdata = testing)
+
+ppp <- predict(model3, newdata = testing)
 confusionMatrix(ppp2,testing$classe)
+
+combined <- data.frame(p,pp,ppp,classe = testing$classe)
+model_c <- train(classe ~., data=combined, method = "rf")
+
 
 ```
 
@@ -126,10 +127,10 @@ Final validation is done on validation set. All three methods give the same pred
 answers1 <- predict(model1, newdata=ts)
 answers2 <- predict(model2, newdata=ts)
 answers3 <- predict(model3, newdata=ts)
+comb_pred <- data.frame(p = answers1, pp = answers2, ppp=answers3)
 
-
-Prediction <- data.frame(answers1, answers2, answers3)
-colnames(Prediction) <- c("Random Forest", "SVM", "KNN")
+Prediction <- data.frame(answers1, answers2, answers3, comb_pred)
+colnames(Prediction) <- c("Random Forest", "SVM", "KNN", "Combined Predictors")
 Prediction
 
 ```
