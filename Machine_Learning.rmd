@@ -53,7 +53,7 @@ With preprocessing:   Random_Forest (0.984) SVM (0.972)    KNN( 0.947)
            
 Since preprocessing has small impact on the accuracy (the results are very nice without preprocessing), in the further analysis preprocessing is not used. 
 The RF also differ from SVM and KNN in the selection of the variable of Importance as could be observed from the results bellow.
-The initial idea behind employing three different ML approaches was to build a model based on combined predictors. However it turned out that the methods are not compatible to be combined (the algorithm does not converge), but as stand alone they are very accurate and provide excellent results.   
+
 Cross validation for all three methods is done on testing set. ConfusionMatrix and Statistics show good correlation between the outcome from training and testing sets (very small, almost neglecting number of misclassification). 
 
 Model1: Training set: no one misclassified case. Testing set: 49 out of 4904 or 1%
@@ -65,6 +65,7 @@ Model 3: Training set: 597 out of 14718 or 4%. Testing set: 423 out of 4904 or 8
 Kappa value in all cases is 1 (or very close to 1), what does mean that the observed accuracy perfectly matches the expected accuracy and the error is minimised.
 I would also like to mention that in parallel with the above methods boosted trees ("gbm") and linear discriminant analysis ("lda") model have been examined as well. The accuracy of gbm is 0.907, while lda has surprisingly low accuracy of 0.674. Due to the scope of this report, these analysis will not be presented. 
 
+All three models (rf, SVM, KNN) are further employed to build combined predictors and make final prediction based on both approaches: combined predictors and single model predictors as well. All four predictions (rf, SVM, KNN and combined) agree in all values and they are correct.
 ```{r}
 
 
