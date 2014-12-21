@@ -104,6 +104,49 @@ KNN <- round(max(head(model33$results)$Accuracy),3)
 s <- data.frame(Random_Forest,SVM,KNN); rownames(s) <- "Accuracy"; s
 ##          Random_Forest   SVM   KNN
 ## Accuracy         0.985 0.971 0.946
+(L <- list(model1$finalModel, model2$finalModel, model3$finalModel))
+[[1]]
+
+Call:
+ randomForest(x = x, y = y, mtry = param$mtry) 
+               Type of random forest: classification
+                     Number of trees: 500
+No. of variables tried at each split: 2
+
+        OOB estimate of  error rate: 0.98%
+Confusion matrix:
+     A    B    C    D    E class.error
+A 4178    3    2    1    1  0.00167264
+B   24 2816    8    0    0  0.01123596
+C    0   24 2541    2    0  0.01012855
+D    0    0   62 2345    5  0.02777778
+E    0    2    1    9 2694  0.00443459
+
+[[2]]
+Support Vector Machine object of class "ksvm" 
+
+SV type: C-svc  (classification) 
+ parameter : cost C = 1 
+
+Gaussian Radial Basis kernel function. 
+ Hyperparameter : sigma =  0.014912495421344 
+
+Number of Support Vectors : 7194 
+
+Objective Function Value : -1127.457 -839.0254 -740.4779 -459.3898 -1090.924 -572.4768 -785.2665 -1057.049 -759.5258 -644.7979 
+Training error : 0.065838 
+
+[[3]]
+5-nearest neighbor classification model
+
+Call:
+knn3.matrix(x = as.matrix(x), y = y, k = param$k)
+
+Training set class distribution:
+
+   A    B    C    D    E 
+4185 2848 2567 2412 2706 
+
 R1 <- varImp(model1); R2 <- varImp(model2); R3 <- varImp(model3)
 (R <- list(R1,R2,R3))
 ## [[1]]
@@ -305,6 +348,23 @@ varImp(model_c)
 ## pppB   8.012
 ## pppD   4.390
 ## pppC   0.000
+
+model_c$finalModel
+Call:
+ randomForest(x = x, y = y, mtry = param$mtry) 
+               Type of random forest: classification
+                     Number of trees: 500
+No. of variables tried at each split: 2
+
+        OOB estimate of  error rate: 1%
+Confusion matrix:
+     A   B   C   D   E class.error
+A 1390   2   3   0   0 0.003584229
+B   10 933   6   0   0 0.016859852
+C    0   3 852   0   0 0.003508772
+D    0   0  18 786   0 0.022388060
+E    0   0   2   5 894 0.007769145
+
 Final validation
 
 Final validation is done on validation set. All three methods give the same prediction. Answers as presented bellow are submitted and the are correct.
