@@ -130,9 +130,11 @@ Final validation is done on validation set. All three methods give the same pred
 answers1 <- predict(model1, newdata=ts)
 answers2 <- predict(model2, newdata=ts)
 answers3 <- predict(model3, newdata=ts)
-comb_pred <- data.frame(p = answers1, pp = answers2, ppp=answers3)
 
-Prediction <- data.frame(answers1, answers2, answers3, comb_pred)
+comb_pred <- data.frame(p = answers1, pp = answers2, ppp=answers3)
+answers_c <- predict(model_c, comb_pred)
+
+Prediction <- data.frame(answers1, answers2, answers3, answers_c)
 colnames(Prediction) <- c("Random Forest", "SVM", "KNN", "Combined Predictors")
 Prediction
 
