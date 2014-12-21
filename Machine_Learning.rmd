@@ -66,7 +66,7 @@ Kappa value in all cases is 1 (or very close to 1), what does mean that the obse
 I would also like to mention that in parallel with the above methods boosted trees ("gbm") and linear discriminant analysis ("lda") model have been examined as well. The accuracy of gbm is 0.907, while lda has surprisingly low accuracy of 0.674. Due to the scope of this report, these analysis will not be presented. 
 
 All three models (rf, SVM, KNN) are further employed to build combined predictors and make final prediction based on both approaches: combined predictors and single model predictors as well. All four predictions (rf, SVM, KNN and combined) agree in all values and they are correct.
-Most important variables of the combined predictors model are presented.
+Variables of importance varImp() of the combined predictors model are also presented.
 ```{r}
 
 set <- createDataPartition(y = tr$classe, p=0.75, list = FALSE)
