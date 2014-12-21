@@ -103,15 +103,15 @@ R1 <- varImp(model1); R2 <- varImp(model2); R3 <- varImp(model3)
 
 
 p <- predict(model1, newdata = testing)
-confusionMatrix(p2,testing$classe)
+confusionMatrix(p,testing$classe)
 
 
 pp <- predict(model2, newdata = testing)
-confusionMatrix(pp2,testing$classe)
+confusionMatrix(pp,testing$classe)
 
 
 ppp <- predict(model3, newdata = testing)
-confusionMatrix(ppp2,testing$classe)
+confusionMatrix(ppp,testing$classe)
 
 combined <- data.frame(p,pp,ppp,classe = testing$classe)
 model_c <- train(classe ~., data=combined, method = "rf")
