@@ -61,6 +61,8 @@ Kappa value in all cases is 1 (or very close to 1), what does mean that the obse
 
 All three models (rf, SVM, KNN) are further employed to build combined predictors and make final prediction based on both approaches: combined predictors and single model predictors as well. All four predictions (rf, SVM, KNN and combined) agree in all values and they are correct. Most important variables of the combined predictors model are presented.
 
+The error rate of combined model is 1%, what is not better than the error rate of Random Forest alone (0.98%)
+
 set <- createDataPartition(y = tr$classe, p=0.75, list = FALSE)
 training <- tr[set,]
 testing <- tr[-set,]
@@ -108,7 +110,6 @@ s <- data.frame(Random_Forest,SVM,KNN); rownames(s) <- "Accuracy"; s
 ## Accuracy         0.985 0.971 0.946
 (L <- list(model1$finalModel, model2$finalModel, model3$finalModel))
 [[1]]
-
 Call:
  randomForest(x = x, y = y, mtry = param$mtry) 
                Type of random forest: classification
