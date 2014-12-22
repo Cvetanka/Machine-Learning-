@@ -57,11 +57,11 @@ Random Forest is built on 500 trees, SVM has 7194 support vectors, while KNN use
 
 Cross validation for all three methods is done on testing set. ConfusionMatrix and Statistics show good correlation between the outcome from training and testing sets (very small, almost neglecting number of misclassification). 
 
-Model1:  Testing set: 49 out of 4904 or 1%
+Model1 RF:  Testing set: 49 out of 4904 or 1% misclasified samoles
 
-Model 2: Testing set: 369 out of 4904 or 7.5%
+Model SVM 2: Testing set: 369 out of 4904 or 7.5% misclasified samples
 
-Model 3: Testing set: 423 out of 4904 or 8.6%
+Model KNN 3: Testing set: 423 out of 4904 or 8.6% misclasified samples
 
 Out of sample error (1- accuracy) from confusionMatrix: Random_Forest  (0.016) SVM (0.088) KNN (0.127) 
 
