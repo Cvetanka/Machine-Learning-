@@ -70,7 +70,8 @@ I would also like to mention that in parallel with the above methods boosted tre
 
 All three models (rf, SVM, KNN) are further employed to build combined predictors model stack to rf, and make final prediction based on both approaches: combined predictors and single model predictors as well. All four predictions (rf, SVM, KNN and combined) agree in all values and they are correct.
 Variables of importance varImp() of the combined predictors model are also presented.
-The error rate of combined model is 1%, what is not better than the error rate of Random Forest alone (0.98%)
+The OOB (Out of bag) error rate of combined model is 1%, what is not better than the error rate of Random Forest alone (0.98%)
+It could be determined from model1$finalModel for rf and model_c$finalModel for combined predictors.
 ```{r}
 
 set <- createDataPartition(y = tr$classe, p=0.75, list = FALSE)
