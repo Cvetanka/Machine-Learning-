@@ -50,7 +50,10 @@ Three different machine learning methods (Random Forest -RF, Support Vector Mach
   
 Without preprocessing: Random_Forest (0.984) SVM (0.912)    KNN(0.873)                                
 With preprocessing:   Random_Forest (0.984) SVM (0.972)    KNN( 0.947)
-           
+
+Out of sample error without preprocessing: Random_Forest  (0.016) SVM (0.088) KNN (0.127)  
+Out of sample error with preprocessing: Random_Forest (0.016) SVM (0.028) KNN (0.053)
+
 Since preprocessing has small impact on the accuracy (the results are very nice without preprocessing), in the further analysis preprocessing is not used. 
 The RF also differ from SVM and KNN in the selection of the variable of Importance as could be observed from the results bellow.
 Random Forest is built on 500 trees, SVM has 7194 support vectors, while KNN uses 5-nearest neighbor classification model.
